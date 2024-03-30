@@ -318,7 +318,7 @@ aws s3 mb s3://p3-stedi-lakehouse/accelerometer/curated/
 ### 2.4. After usage: delete the ressources
 
 - delete the vpc endpoint
-```aws ec2 delete-vpc-endpoints --vpc-endpoint-ids vpce-aa22bb33 vpce-1a2b3c4d```
+```aws ec2 delete-vpc-endpoints --vpc-endpoint-ids vpce-02d9b861ebbd040a3```
 
 (check in AWS console)
 
@@ -394,7 +394,7 @@ s3://cd0030bucket/accelerometer/
     - aws glue / data catalog / databases
         - data 
     - --> in console search "glue data catalog"
-    - add database
+    - add **database**
     - create database "stedi"
     - --> add table: customer_landing
     - add columns
@@ -402,6 +402,11 @@ s3://cd0030bucket/accelerometer/
 
     - --> alternatively we can create a table with athena
         --> advantage: we can save the create query
+        <red> **note that we can create the DDL after a table was created (with glue) in Athena**</red>
+
+- to remove
+    - remove all tables (Athena or glue)
+    - remove database (glue)
 
 - query table
     - --> Athena

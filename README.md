@@ -123,6 +123,99 @@ z
 - 4. Curated Zone
 
 ## 2. Security Setup
+
+### 2.1. Network Access
+- VPC
+
+- get RouteTableId
+```aws ec2 describe-route-tables```
+
+- get vpc id
+```aws ec3 describe-vpcs```
+
+- S3 Gateway  
+```BASH
+aws ec2 create-vpc-endpoint --vpc-id _______ --service-name com.amazonaws.us-east-1.s3 --route-table-ids _______
+```
+
+### 2.2. User Privileges
+- IAM Role with policies
+
+- create glue service role
+```PYTHON
+aws iam create-role --role-name my-glue-service-role --assume-role-policy-document '{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "glue.amazonaws.com"
+            },
+            "Action": "sts:AssumeRole"
+        }
+    ]
+}'
+```
+
+- attach policy 
+
+    - s3 access
+**Replace the blanks in the statement below with your S3 bucket name (ex: seans-lakehouse)**
+
+    ```BASH
+    aws iam put-role-policy --role-name my-glue-service-role --policy-name S3Access --policy-document '{ "Version": "2012-10-17", "Statement": [ { "Sid": "ListObjectsInBucket", "Effect": "Allow", "Action": [ "s3:ListBucket" ], "Resource": [ "arn:aws:s3:::_______" ] }, { "Sid": "AllObjectActions", "Effect": "Allow", "Action": "s3:*Object", "Resource": [ "arn:aws:s3:::_______/*" ] } ] }'
+    ```
+
+
+    - glue access
+    ```BASH
+    aws iam put-role-policy --role-name my-glue-service-role --policy-name GlueAccess --policy-document
+    ```
+
+### 2.3. After usage: delete the ressources
+
+- delete the vpc endpoint
+```aws ec2 delete-vpc-endpoints --vpc-endpoint-ids vpce-aa22bb33 vpce-1a2b3c4d```
+
+(check in AWS console)
+
+
+- delete an IAM role
+
+```BASH
+detach-role-policy --role-name <value> --policy-arn <value>
+delete-role --role-name <value>
+```
+
+```PYTHON
+iam.detach_role_policy(RoleName=DWH_IAM_ROLE_NAME, PolicyArn="arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess")
+iam.delete_role(RoleName=DWH_IAM_ROLE_NAME)
+```
+
+- Note: for access with Python:
+```PYTHON
+import boto3
+
+ec2 = boto3.resource('ec2',
+                       region_name="us-west-2",
+                       aws_access_key_id=KEY,
+                       aws_secret_access_key=SECRET
+                    )
+
+s3 = boto3.resource('s3',
+                       region_name="us-west-2",
+                       aws_access_key_id=KEY,
+                       aws_secret_access_key=SECRET
+                   )
+
+iam = boto3.client('iam',aws_access_key_id=KEY,
+                     aws_secret_access_key=SECRET,
+                     region_name='us-west-2'
+                  )
+```
+
+
+
 ## 3. Landing Zone
 ## 4. Trusted Zone
 ## 5. Curated Zone

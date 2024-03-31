@@ -448,4 +448,12 @@ s3://cd0030bucket/accelerometer/
 
 
 ## 4. Trusted Zone
+
+queries prepared in /trusted
+
+_Note_ for step_trainer_trusted we first need customer_curated (step 3) --> see project rubric
+
 ## 5. Curated Zone
+- tables
+- customer
+- machine learing

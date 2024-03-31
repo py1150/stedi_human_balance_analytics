@@ -449,6 +449,13 @@ s3://cd0030bucket/accelerometer/
 
 ## 4. Trusted Zone
 
+https://learn.udacity.com/nanodegrees/nd027/parts/cd12441/lessons/b197ec56-711e-40f4-8ce5-57bab539b408/concepts/37b447a5-9973-4613-bdff-a7311b07ec55
+
+- glue jobs
+    --> we can have multiple jobs, we can duplicate
+    - pattern bucket : transform : bucket
+    - at a drop fields or drup duplicates transform if needed
+
 queries prepared in /trusted
 
 _Note_ for step_trainer_trusted we first need customer_curated (step 3) --> see project rubric

@@ -20,6 +20,11 @@ Step Trainer: 14460
 Curated
 Customer: 482
 Machine Learning: 43681
+
+source:
+s3://p3-stedi-lakehouse/accelerometer/landing/
+target:
+s3://p3-stedi-lakehouse/accelerometer/trusted/
 */
 
 

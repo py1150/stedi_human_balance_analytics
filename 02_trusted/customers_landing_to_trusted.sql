@@ -7,5 +7,8 @@ target
 s3://p3-stedi-lakehouse/customer/trusted/
 */
 
-CREATE TABLE customers_trusted AS
-SELECT * FROM customers_landing WHERE shareWithResearchAsOfDate IS NOT NULL;
+/*
+Input sources: customer_landing
+SQL aliases customer_landing
+*/
+SELECT * FROM customer_landing WHERE shareWithResearchAsOfDate IS NOT NULL;

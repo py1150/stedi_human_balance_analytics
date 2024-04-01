@@ -443,6 +443,21 @@ queries prepared in /trusted
 
 _Note_ for step_trainer_trusted we first need customer_curated (step 3) --> see project rubric
 
+
+- preconditions and options:
+    - we need to have the right permissions (e.g., S3 object operations for all objects in a path, i.e., s3://.../*)
+    - when source can be accessed - we see it in preivew
+    - e.g., for SQL Node:
+/*
+Input sources: customer_landing
+SQL aliases customer_landing
+*/
+    - set output options as outlined in rubric
+    - we can work with glue cataloge tables as source (once we defined them in glue/athena)
+    - we can output to s3 (but have to set the option above to automatically generate a table in the data catagloue)
+
+- deleted vpc endpoint only
+
 ## 5. Curated Zone
 - tables
 - customer

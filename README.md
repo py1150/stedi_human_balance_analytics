@@ -129,11 +129,11 @@ z
 
 - get RouteTableId
 ```aws ec2 describe-route-tables | grep "RouteTableId"```
---> _rtb-08d8bcb788bb33983_
+--> _rtb-08d8bcb788bb33983_ (stayed constant)
 
 - get vpc id
 ```aws ec2 describe-vpcs | grep "VpcId"```
---> _vpc-022630960c2b48beb_
+--> _vpc-022630960c2b48beb_ (stayed constant)
 
 - S3 Gateway  
 ```BASH
@@ -166,6 +166,9 @@ aws ec2 create-vpc-endpoint --vpc-id vpc-022630960c2b48beb --service-name com.am
     }
 }
 ```
+--> endpoint id changes
+- 2024/04/01: _vpce-0e38377f58f2d63ad_
+
 --> we see it in AWS console in VPC / Endpoints
 https://us-east-1.console.aws.amazon.com/vpcconsole/home?region=us-east-1#Endpoints:
 
@@ -362,6 +365,9 @@ s3://cd0030bucket/accelerometer/
     see:
     https://learn.udacity.com/nanodegrees/nd027/parts/cd12441/lessons/5dcc7706-1ab5-4361-9b6b-59d8531a41b8/concepts/8443a918-363a-4048-83e9-476d33ac6c95
 
+    https://learn.udacity.com/nanodegrees/nd027/parts/cd12441/lessons/b197ec56-711e-40f4-8ce5-57bab539b408/concepts/4e1be55b-65b9-442f-9530-d036514873f2
+
+
     - clone git repo
     ```git clone https://github.com/udacity/nd027-Data-Engineering-Data-Lakes-AWS-Exercises.git```
 
@@ -390,61 +396,38 @@ s3://cd0030bucket/accelerometer/
     rm -r nd027-Data-Engineering-Data-Lakes-AWS-Exercises
     ```
 
+
+
 - create table
     - aws glue / data catalog / databases
         - data 
     - --> in console search "glue data catalog"
     - add **database**
-    - create database "stedi"
-    - --> add table: customer_landing
-    - add columns
-    - --> edit schema as JSON --> see _customer_landing.json_
+        - create database "_stedi_"
+    - click on database stedi and add table: customer_landing
+        - add columns
+        - --> edit schema as JSON --> see _customer_landing.json_
 
     - --> alternatively we can create a table with athena
         --> advantage: we can save the create query
         <red> **note that we can create the DDL after a table was created (with glue) in Athena**</red>
+
+- target tables
+    - customer_landing
+        - source: s3://p3-stedi-lakehouse/customer/landing/
+    - accelerometer_landing
+        - source: s3://p3-stedi-lakehouse/accelerometer/landing/
+    - step_trainer_landing
+        - source: s3://p3-stedi-lakehouse/step_trainer/landing/
+
 
 - to remove
     - remove all tables (Athena or glue)
     - remove database (glue)
 
 - query table
-    - --> Athena
+    - --> **Athena**
 
-
-- ingest data
-    https://learn.udacity.com/nanodegrees/nd027/parts/cd12441/lessons/5dcc7706-1ab5-4361-9b6b-59d8531a41b8/concepts/8443a918-363a-4048-83e9-476d33ac6c95
-    
-    https://learn.udacity.com/nanodegrees/nd027/parts/cd12441/lessons/b197ec56-711e-40f4-8ce5-57bab539b408/concepts/4e1be55b-65b9-442f-9530-d036514873f2
-
-    - github repository
-        - try via cli,
-        - local AWS cli otherwise
-
-- target tables
-    - customer_landing
-    - accelerometer_landing
-    - step_trainer_landing
-
-- define tables
-    - glue console
-            --> data catalog
-            - add table - add path
-            - add format
-            - add columns and data types
-                (in exercise we used BigInt for share with flag and dates)
-            - --> now table is in glue catalog --> search with AThena is possible
-            - --> **we can query the data before loading them**
- - ingest data (landing zone)
-        - to obtain data - in aws shell clone git rep - go to /starter
-        
-        - create s3 buckets
-        - copy data: ```aws s3 cp source s3://target-bucket/```
-        - list them ```aws s3 ls s3://...```
-        - --> create a glue table from the ingested data
-            --> query
-        - --> alternatively we can also create the table (manually) directly in Athena to query
-         --> we get **create table queries** in the preview which we can save
 
 
 ## 4. Trusted Zone

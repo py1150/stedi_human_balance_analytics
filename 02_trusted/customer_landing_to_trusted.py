@@ -18,18 +18,18 @@ spark = glueContext.spark_session
 job = Job(glueContext)
 job.init(args['JOB_NAME'], args)
 
-# Script generated for node customer_landing
-customer_landing_node1711875249347 = glueContext.create_dynamic_frame.from_options(format_options={"multiline": False}, connection_type="s3", format="json", connection_options={"paths": ["s3://p3-stedi-lakehouse/customer/landing/"], "recurse": True}, transformation_ctx="customer_landing_node1711875249347")
+# Script generated for node AWS Glue Data Catalog
+AWSGlueDataCatalog_node1711957772344 = glueContext.create_dynamic_frame.from_catalog(database="stedi", table_name="customer_landing", transformation_ctx="AWSGlueDataCatalog_node1711957772344")
 
-# Script generated for node customer_landing_to_trusted
+# Script generated for node SQL Query
 SqlQuery0 = '''
-CREATE TABLE customers_trusted AS
-SELECT * FROM customers_landing WHERE shareWithResearchAsOfDate IS NOT NULL;
-
+SELECT * FROM customer_landing WHERE shareWithResearchAsOfDate IS NOT NULL;
 '''
-customer_landing_to_trusted_node1711875317614 = sparkSqlQuery(glueContext, query = SqlQuery0, mapping = {"myDataSource":customer_landing_node1711875249347}, transformation_ctx = "customer_landing_to_trusted_node1711875317614")
+SQLQuery_node1711957750021 = sparkSqlQuery(glueContext, query = SqlQuery0, mapping = {"myDataSource":AWSGlueDataCatalog_node1711957772344}, transformation_ctx = "SQLQuery_node1711957750021")
 
-# Script generated for node customer_trusted
-customer_trusted_node1711875384742 = glueContext.write_dynamic_frame.from_options(frame=customer_landing_to_trusted_node1711875317614, connection_type="s3", format="json", connection_options={"path": "s3://p3-stedi-lakehouse/customer/trusted/", "compression": "snappy", "partitionKeys": []}, transformation_ctx="customer_trusted_node1711875384742")
-
+# Script generated for node Amazon S3
+AmazonS3_node1711957895325 = glueContext.getSink(path="s3://p3-stedi-lakehouse/customer/trusted/", connection_type="s3", updateBehavior="UPDATE_IN_DATABASE", partitionKeys=[], compression="snappy", enableUpdateCatalog=True, transformation_ctx="AmazonS3_node1711957895325")
+AmazonS3_node1711957895325.setCatalogInfo(catalogDatabase="stedi",catalogTableName="customer_trusted")
+AmazonS3_node1711957895325.setFormat("json")
+AmazonS3_node1711957895325.writeFrame(SQLQuery_node1711957750021)
 job.commit()

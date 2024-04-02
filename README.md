@@ -146,7 +146,7 @@ aws ec2 create-vpc-endpoint --vpc-id vpc-022630960c2b48beb --service-name com.am
 ```BASH
 {
     "VpcEndpoint": {
-        "VpcEndpointId": "vpce-02d9b861ebbd040a3",
+        "VpcEndpointId": "vpce-078bfbeeb084a365a",
         "VpcEndpointType": "Gateway",
         "VpcId": "vpc-022630960c2b48beb",
         "ServiceName": "com.amazonaws.us-east-1.s3",
@@ -439,24 +439,35 @@ https://learn.udacity.com/nanodegrees/nd027/parts/cd12441/lessons/b197ec56-711e-
     - pattern bucket : transform : bucket
     - at a drop fields or drup duplicates transform if needed
 
-queries prepared in /trusted
 
-_Note_ for step_trainer_trusted we first need customer_curated (step 3) --> see project rubric
+- intermediate notes
+    queries prepared in /trusted
+
+    _Note_ for step_trainer_trusted we first need customer_curated (step 3) --> see project rubric
 
 
-- preconditions and options:
-    - we need to have the right permissions (e.g., S3 object operations for all objects in a path, i.e., s3://.../*)
-    - when source can be accessed - we see it in preivew
-    - e.g., for SQL Node:
-/*
-Input sources: customer_landing
-SQL aliases customer_landing
-*/
-    - set output options as outlined in rubric
-    - we can work with glue cataloge tables as source (once we defined them in glue/athena)
-    - we can output to s3 (but have to set the option above to automatically generate a table in the data catagloue)
+    - preconditions and options:
+        - we need to have the right permissions (e.g., S3 object operations for all objects in a path, i.e., s3://.../*)
+        - when source can be accessed - we see it in preivew
+        - e.g., for SQL Node:
+    /*
+    Input sources: customer_landing
+    SQL aliases customer_landing
+    */
+        - set output options as outlined in rubric
+        - we can work with glue cataloge tables as source (once we defined them in glue/athena)
+        - we can output to s3 (but have to set the option above to automatically generate a table in the data catagloue)
 
-- deleted vpc endpoint only
+    - deleted vpc endpoint only
+
+- tables
+    - customer_trusted
+        - we create a table in glue catalog (databases/tables) first (before running etl)
+        - we run the etl job customer_landing_to_trusted
+        - update 2024/01/02 - we create the table schema directly via the glue job - we have to set compression to "None"!
+        - we choose s3 as input for the processed table (customer_trusted) - format json
+    - accelerometer trusted
+        - we test the join in athena first
 
 ## 5. Curated Zone
 - tables

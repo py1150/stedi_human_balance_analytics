@@ -19,30 +19,25 @@ job = Job(glueContext)
 job.init(args['JOB_NAME'], args)
 
 # Script generated for node accelerometer_landing
-accelerometer_landing_node1711875249347 = glueContext.create_dynamic_frame.from_options(format_options={"multiline": False}, connection_type="s3", format="json", connection_options={"paths": ["s3://p3-stedi-lakehouse/accelerometer/landing/"], "recurse": True}, transformation_ctx="accelerometer_landing_node1711875249347")
+accelerometer_landing_node1711991778048 = glueContext.create_dynamic_frame.from_catalog(database="stedi", table_name="accelerometer_landing", transformation_ctx="accelerometer_landing_node1711991778048")
 
-# Script generated for node customer_landing
-customer_landing_node1711875859119 = glueContext.create_dynamic_frame.from_options(format_options={"multiline": False}, connection_type="s3", format="json", connection_options={"paths": ["s3://p3-stedi-lakehouse/customer/landing/"], "recurse": True}, transformation_ctx="customer_landing_node1711875859119")
+# Script generated for node customer_trusted
+customer_trusted_node1712035179261 = glueContext.create_dynamic_frame.from_options(format_options={"multiline": False}, connection_type="s3", format="json", connection_options={"paths": ["s3://p3-stedi-lakehouse/customer/trusted/"], "recurse": True}, transformation_ctx="customer_trusted_node1712035179261")
 
 # Script generated for node accelerometer_landing_to_trusted
 SqlQuery0 = '''
-CREATE TABLE acceleromter_trusted AS
 SELECT 
-    acc.* 
-FROM accelerometer_landing AS acc
-INNER JOIN (
-    SELECT 
-        * 
-    FROM customers_landing where shareWithResearchAsOfDate IS NOT NULL;      
-) AS cust
-/*alternative*/
-INNER JOIN customers_trusted cust
-ON acc.user = cust.email
+    accelerometer_landing.* 
+FROM accelerometer_landing
+INNER JOIN customer_trusted
+ON accelerometer_landing.user = customer_trusted.email
 ;
 '''
-accelerometer_landing_to_trusted_node1711875317614 = sparkSqlQuery(glueContext, query = SqlQuery0, mapping = {"acc":accelerometer_landing_node1711875249347, "cust":customer_landing_node1711875859119}, transformation_ctx = "accelerometer_landing_to_trusted_node1711875317614")
+accelerometer_landing_to_trusted_node1711991905927 = sparkSqlQuery(glueContext, query = SqlQuery0, mapping = {"accelerometer_landing":accelerometer_landing_node1711991778048, "":customer_trusted_node1712035179261}, transformation_ctx = "accelerometer_landing_to_trusted_node1711991905927")
 
 # Script generated for node accelerometer_trusted
-accelerometer_trusted_node1711875384742 = glueContext.write_dynamic_frame.from_options(frame=accelerometer_landing_to_trusted_node1711875317614, connection_type="s3", format="json", connection_options={"path": "s3://p3-stedi-lakehouse/accelerometer/trusted/", "compression": "snappy", "partitionKeys": []}, transformation_ctx="accelerometer_trusted_node1711875384742")
-
+accelerometer_trusted_node1711992013224 = glueContext.getSink(path="s3://p3-stedi-lakehouse/accelerometer/trusted/", connection_type="s3", updateBehavior="UPDATE_IN_DATABASE", partitionKeys=[], enableUpdateCatalog=True, transformation_ctx="accelerometer_trusted_node1711992013224")
+accelerometer_trusted_node1711992013224.setCatalogInfo(catalogDatabase="stedi",catalogTableName="accelerometer_trusted")
+accelerometer_trusted_node1711992013224.setFormat("json")
+accelerometer_trusted_node1711992013224.writeFrame(accelerometer_landing_to_trusted_node1711991905927)
 job.commit()

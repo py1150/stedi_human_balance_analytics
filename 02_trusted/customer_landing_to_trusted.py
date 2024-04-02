@@ -4,7 +4,15 @@ from awsglue.utils import getResolvedOptions
 from pyspark.context import SparkContext
 from awsglue.context import GlueContext
 from awsglue.job import Job
-import re
+from awsglue import DynamicFrame
+
+
+def sparkSqlQuery(glueContext, query, mapping, transformation_ctx) -> DynamicFrame:
+    for alias, frame in mapping.items():
+        frame.toDF().createOrReplaceTempView(alias)
+    result = spark.sql(query)
+    return DynamicFrame.fromDF(result, glueContext, transformation_ctx)
+
 
 args = getResolvedOptions(sys.argv, ["JOB_NAME"])
 sc = SparkContext()
@@ -21,10 +29,14 @@ customer_landing_node1711959758722 = glueContext.create_dynamic_frame.from_catal
 )
 
 # Script generated for node customer_landing_to_trusted
-customer_landing_to_trusted_node1711959829610 = Filter.apply(
-    frame=customer_landing_node1711959758722,
-    f=lambda row: (not (row["sharewithresearchasofdate"] == 0)),
-    transformation_ctx="customer_landing_to_trusted_node1711959829610",
+SqlQuery0 = """
+SELECT * FROM customer_landing WHERE shareWithResearchAsOfDate IS NOT NULL;
+"""
+customer_landing_to_trusted_node1711961375644 = sparkSqlQuery(
+    glueContext,
+    query=SqlQuery0,
+    mapping={"customer_landing": customer_landing_node1711959758722},
+    transformation_ctx="customer_landing_to_trusted_node1711961375644",
 )
 
 # Script generated for node customer_trusted
@@ -33,7 +45,6 @@ customer_trusted_node1711959887476 = glueContext.getSink(
     connection_type="s3",
     updateBehavior="UPDATE_IN_DATABASE",
     partitionKeys=[],
-    compression="snappy",
     enableUpdateCatalog=True,
     transformation_ctx="customer_trusted_node1711959887476",
 )
@@ -42,6 +53,7 @@ customer_trusted_node1711959887476.setCatalogInfo(
 )
 customer_trusted_node1711959887476.setFormat("json")
 customer_trusted_node1711959887476.writeFrame(
-    customer_landing_to_trusted_node1711959829610
+    customer_landing_to_trusted_node1711961375644
 )
 job.commit()
+

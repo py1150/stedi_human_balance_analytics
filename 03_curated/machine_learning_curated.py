@@ -21,64 +21,54 @@ spark = glueContext.spark_session
 job = Job(glueContext)
 job.init(args["JOB_NAME"], args)
 
-# Script generated for node accelerometer_trusted
-accelerometer_trusted_node1711875249347 = glueContext.create_dynamic_frame.from_options(
-    format_options={"multiLine": False},
-    connection_type="s3",
-    format="json",
-    connection_options={
-        "paths": ["s3://p3-stedi-lakehouse/accelerometer/trusted/"],
-        "recurse": True,
-    },
-    transformation_ctx="accelerometer_trusted_node1711875249347",
-)
-
 # Script generated for node step_trainer_trusted
-step_trainer_trusted_node1711875859119 = glueContext.create_dynamic_frame.from_options(
-    format_options={"multiLine": False},
-    connection_type="s3",
-    format="json",
-    connection_options={
-        "paths": ["s3://p3-stedi-lakehouse/step_trainer/trusted/"],
-        "recurse": True,
-    },
-    transformation_ctx="step_trainer_trusted_node1711875859119",
+step_trainer_trusted_node1711991840954 = glueContext.create_dynamic_frame.from_catalog(
+    database="stedi",
+    table_name="step_trainer_trusted",
+    transformation_ctx="step_trainer_trusted_node1711991840954",
 )
 
-# Script generated for node machine_learning_curated
+# Script generated for node accelerometer_trusted
+accelerometer_trusted_node1711991778048 = glueContext.create_dynamic_frame.from_catalog(
+    database="stedi",
+    table_name="accelerometer_trusted",
+    transformation_ctx="accelerometer_trusted_node1711991778048",
+)
+
+# Script generated for node step_trainer_accelerometer_trusted_to_machine_learning
 SqlQuery0 = """
-CREATE TABLE machine_learning_curated AS
 SELECT 
-    trainer.*
-    ,acc.*
-FROM step_trainer_trusted as trainer
-INNER JOIN accelerometer_trusted as acc
-    ON trainer.sensorReadingTime=acc.timestamp    
+    step_trainer_trusted.*
+    ,accelerometer_trusted.*
+FROM step_trainer_trusted
+INNER JOIN accelerometer_trusted
+    ON step_trainer_trusted.sensorReadingTime=accelerometer_trusted.timestamp
 ;
 """
-machine_learning_curated_node1711875317614 = sparkSqlQuery(
+step_trainer_accelerometer_trusted_to_machine_learning_node1711991905927 = sparkSqlQuery(
     glueContext,
     query=SqlQuery0,
     mapping={
-        "acc": accelerometer_trusted_node1711875249347,
-        "trainer": step_trainer_trusted_node1711875859119,
+        "step_trainer_trusted": step_trainer_trusted_node1711991840954,
+        "accelerometer_trusted": accelerometer_trusted_node1711991778048,
     },
-    transformation_ctx="machine_learning_curated_node1711875317614",
+    transformation_ctx="step_trainer_accelerometer_trusted_to_machine_learning_node1711991905927",
 )
 
 # Script generated for node machine_learning_curated
-machine_learning_curated_node1711875384742 = (
-    glueContext.write_dynamic_frame.from_options(
-        frame=machine_learning_curated_node1711875317614,
-        connection_type="s3",
-        format="json",
-        connection_options={
-            "path": "s3://p3-stedi-lakehouse/machine_learning/curated/",
-            "compression": "snappy",
-            "partitionKeys": [],
-        },
-        transformation_ctx="machine_learning_curated_node1711875384742",
-    )
+machine_learning_curated_node1711992013224 = glueContext.getSink(
+    path="s3://p3-stedi-lakehouse/machine_learning/curated/",
+    connection_type="s3",
+    updateBehavior="LOG",
+    partitionKeys=[],
+    enableUpdateCatalog=True,
+    transformation_ctx="machine_learning_curated_node1711992013224",
 )
-
+machine_learning_curated_node1711992013224.setCatalogInfo(
+    catalogDatabase="stedi", catalogTableName="machine_learning_curated"
+)
+machine_learning_curated_node1711992013224.setFormat("json")
+machine_learning_curated_node1711992013224.writeFrame(
+    step_trainer_accelerometer_trusted_to_machine_learning_node1711991905927
+)
 job.commit()

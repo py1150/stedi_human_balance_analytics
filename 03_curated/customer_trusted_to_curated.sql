@@ -1,7 +1,6 @@
-CREATE TABLE customer_curated as
-SELECT
-    cust.*
-FROM customer_trusted AS cust
-INNER JOIN accelerometer_trusted AS acc
-    ON cust.email=acc.email
+SELECT DISTINCT
+    customer_trusted.*
+FROM customer_trusted
+INNER JOIN acelerometer_trusted
+    ON customer_trusted.email=acelerometer_trusted.user
 ;

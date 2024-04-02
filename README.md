@@ -462,12 +462,17 @@ https://learn.udacity.com/nanodegrees/nd027/parts/cd12441/lessons/b197ec56-711e-
 
 - tables
     - customer_trusted
-        - we create a table in glue catalog (databases/tables) first (before running etl)
-        - we run the etl job customer_landing_to_trusted
-        - update 2024/01/02 - we create the table schema directly via the glue job - we have to set compression to "None"!
-        - we choose s3 as input for the processed table (customer_trusted) - format json
+            - we create a table in glue catalog (databases/tables) first (before running etl)
+            - we run the etl job customer_landing_to_trusted
     - accelerometer trusted
-        - we test the join in athena first
+        - we test the join in athena first    
+        - update 2024/01/02 
+        - input
+            - we choose s3 as input for the processed table (customer_trusted) - format json
+            - (apparently we can also use data catalog - simply takes time to propagate updates)
+        - output
+            - we create the table schema directly via the glue job 
+            - we have to set **compression** to "None"!            
 
 ## 5. Curated Zone
 - tables

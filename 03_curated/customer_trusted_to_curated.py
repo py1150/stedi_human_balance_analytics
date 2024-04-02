@@ -6,38 +6,68 @@ from awsglue.context import GlueContext
 from awsglue.job import Job
 from awsglue import DynamicFrame
 
+
 def sparkSqlQuery(glueContext, query, mapping, transformation_ctx) -> DynamicFrame:
     for alias, frame in mapping.items():
         frame.toDF().createOrReplaceTempView(alias)
     result = spark.sql(query)
     return DynamicFrame.fromDF(result, glueContext, transformation_ctx)
-args = getResolvedOptions(sys.argv, ['JOB_NAME'])
+
+
+args = getResolvedOptions(sys.argv, ["JOB_NAME"])
 sc = SparkContext()
 glueContext = GlueContext(sc)
 spark = glueContext.spark_session
 job = Job(glueContext)
-job.init(args['JOB_NAME'], args)
-
-# Script generated for node accelerometer_trusted
-accelerometer_trusted_node1711875249347 = glueContext.create_dynamic_frame.from_options(format_options={"multiline": False}, connection_type="s3", format="json", connection_options={"paths": ["s3://p3-stedi-lakehouse/accelerometer/trusted/"], "recurse": True}, transformation_ctx="accelerometer_trusted_node1711875249347")
+job.init(args["JOB_NAME"], args)
 
 # Script generated for node customer_trusted
-customer_trusted_node1711875859119 = glueContext.create_dynamic_frame.from_options(format_options={"multiline": False}, connection_type="s3", format="json", connection_options={"paths": ["s3://p3-stedi-lakehouse/customer/trusted/"], "recurse": True}, transformation_ctx="customer_trusted_node1711875859119")
+customer_trusted_node1711991840954 = glueContext.create_dynamic_frame.from_catalog(
+    database="stedi",
+    table_name="customer_trusted",
+    transformation_ctx="customer_trusted_node1711991840954",
+)
+
+# Script generated for node accelerometer_trusted
+accelerometer_trusted_node1711991778048 = glueContext.create_dynamic_frame.from_catalog(
+    database="stedi",
+    table_name="accelerometer_trusted",
+    transformation_ctx="accelerometer_trusted_node1711991778048",
+)
 
 # Script generated for node customer_trusted_to_curated
-SqlQuery0 = '''
-CREATE TABLE customer_curated as
-SELECT
-    cust.*
-FROM customer_trusted AS cust
-INNER JOIN accelerometer_trusted AS acc
-    ON cust.email=acc.email
+SqlQuery0 = """
+SELECT DISTINCT
+    customer_trusted.*
+FROM customer_trusted
+INNER JOIN accelerometer_trusted
+    ON customer_trusted.email=accelerometer_trusted.user
 ;
+"""
+customer_trusted_to_curated_node1711991905927 = sparkSqlQuery(
+    glueContext,
+    query=SqlQuery0,
+    mapping={
+        "customer_trusted": customer_trusted_node1711991840954,
+        "accelerometer_trusted": accelerometer_trusted_node1711991778048,
+    },
+    transformation_ctx="customer_trusted_to_curated_node1711991905927",
+)
 
-'''
-customer_trusted_to_curated_node1711875317614 = sparkSqlQuery(glueContext, query = SqlQuery0, mapping = {"acc":accelerometer_trusted_node1711875249347, "cust":customer_trusted_node1711875859119}, transformation_ctx = "customer_trusted_to_curated_node1711875317614")
-
-# Script generated for node customer_curatecd
-customer_curated_node1711875384742 = glueContext.write_dynamic_frame.from_options(frame=customer_trusted_to_curated_node1711875317614, connection_type="s3", format="json", connection_options={"path": "s3://p3-stedi-lakehouse/customer/curated/", "compression": "snappy", "partitionKeys": []}, transformation_ctx="customer_curatecd_node1711875384742")
-
+# Script generated for node customer_curated
+customer_curated_node1711992013224 = glueContext.getSink(
+    path="s3://p3-stedi-lakehouse/customer/curated/",
+    connection_type="s3",
+    updateBehavior="UPDATE_IN_DATABASE",
+    partitionKeys=[],
+    enableUpdateCatalog=True,
+    transformation_ctx="customer_curated_node1711992013224",
+)
+customer_curated_node1711992013224.setCatalogInfo(
+    catalogDatabase="stedi", catalogTableName="customer_curated"
+)
+customer_curated_node1711992013224.setFormat("json")
+customer_curated_node1711992013224.writeFrame(
+    customer_trusted_to_curated_node1711991905927
+)
 job.commit()

@@ -6,37 +6,68 @@ from awsglue.context import GlueContext
 from awsglue.job import Job
 from awsglue import DynamicFrame
 
+
 def sparkSqlQuery(glueContext, query, mapping, transformation_ctx) -> DynamicFrame:
     for alias, frame in mapping.items():
         frame.toDF().createOrReplaceTempView(alias)
     result = spark.sql(query)
     return DynamicFrame.fromDF(result, glueContext, transformation_ctx)
-args = getResolvedOptions(sys.argv, ['JOB_NAME'])
+
+
+args = getResolvedOptions(sys.argv, ["JOB_NAME"])
 sc = SparkContext()
 glueContext = GlueContext(sc)
 spark = glueContext.spark_session
 job = Job(glueContext)
-job.init(args['JOB_NAME'], args)
+job.init(args["JOB_NAME"], args)
 
 # Script generated for node step_trainer_landing
-step_trainer_landing_node1711875249347 = glueContext.create_dynamic_frame.from_options(format_options={"multiline": False}, connection_type="s3", format="json", connection_options={"paths": ["s3://p3-stedi-lakehouse/step_trainer/landing/"], "recurse": True}, transformation_ctx="step_trainer_landing_node1711875249347")
+step_trainer_landing_node1711991840954 = glueContext.create_dynamic_frame.from_catalog(
+    database="stedi",
+    table_name="step_trainer_landing",
+    transformation_ctx="step_trainer_landing_node1711991840954",
+)
 
 # Script generated for node customer_curated
-customer_curated_node1711875859119 = glueContext.create_dynamic_frame.from_options(format_options={"multiline": False}, connection_type="s3", format="json", connection_options={"paths": ["s3://p3-stedi-lakehouse/customer/curated/"], "recurse": True}, transformation_ctx="customer_curated_node1711875859119")
+customer_curated_node1711991778048 = glueContext.create_dynamic_frame.from_catalog(
+    database="stedi",
+    table_name="customer_curated",
+    transformation_ctx="customer_curated_node1711991778048",
+)
 
 # Script generated for node step_trainer_landing_to_trusted
-SqlQuery0 = '''
-CREATE TABLE step_trainer_trusted AS
+SqlQuery0 = """
 SELECT 
-    acc.* 
-FROM step_trainer_landing AS st
-INNER JOIN customer_curated AS cust
-    ON acc.serialNumber = cust.serialNumber
+    step_trainer_landing.* 
+FROM step_trainer_landing
+INNER JOIN customer_curated
+    ON step_trainer_landing.serialNumber = customer_curated.serialNumber
 ;
-'''
-step_trainer_landing_to_trusted_node1711875317614 = sparkSqlQuery(glueContext, query = SqlQuery0, mapping = {"st":step_trainer_landing_node1711875249347, "cust":customer_curated_node1711875859119}, transformation_ctx = "step_trainer_landing_to_trusted_node1711875317614")
+"""
+step_trainer_landing_to_trusted_node1711991905927 = sparkSqlQuery(
+    glueContext,
+    query=SqlQuery0,
+    mapping={
+        "step_trainer_landing": step_trainer_landing_node1711991840954,
+        "customer_curated": customer_curated_node1711991778048,
+    },
+    transformation_ctx="step_trainer_landing_to_trusted_node1711991905927",
+)
 
 # Script generated for node step_trainer_trusted
-step_trainer_trusted_node1711875384742 = glueContext.write_dynamic_frame.from_options(frame=step_trainer_landing_to_trusted_node1711875317614, connection_type="s3", format="json", connection_options={"path": "s3://p3-stedi-lakehouse/step_trainer/trusted/", "compression": "snappy", "partitionKeys": []}, transformation_ctx="step_trainer_trusted_node1711875384742")
-
+step_trainer_trusted_node1711992013224 = glueContext.getSink(
+    path="s3://p3-stedi-lakehouse/step_trainer/trusted/",
+    connection_type="s3",
+    updateBehavior="LOG",
+    partitionKeys=[],
+    enableUpdateCatalog=True,
+    transformation_ctx="step_trainer_trusted_node1711992013224",
+)
+step_trainer_trusted_node1711992013224.setCatalogInfo(
+    catalogDatabase="stedi", catalogTableName="step_trainer_trusted"
+)
+step_trainer_trusted_node1711992013224.setFormat("json")
+step_trainer_trusted_node1711992013224.writeFrame(
+    step_trainer_landing_to_trusted_node1711991905927
+)
 job.commit()

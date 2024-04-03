@@ -58,7 +58,7 @@ s3://p3-stedi-lakehouse/machine_learning/curated/
 I used the _AWS Glue data catalog_ to define the landing tables.
 - customer_landing
 - accelerometer_landing
-- step_trainer_landing
+- step_trainer_landing  
 These are the unfiltered source data. The table schema can be found in /DDL:
 - customer_landing.sql
 - accelerometer_landing.sql
@@ -73,7 +73,7 @@ I stored the output of a sample query:
 and queries which count the number of observations in the tables:  
 - table_name_count.png
 For each of the sources I obtain: 
-- customer_landing 
+- customer_landing   
     --> _956 rows_
 - accelerometer_landing  
     --> _81273 rows_
@@ -91,7 +91,7 @@ _This table contains only the customers who agreed to share their data for resea
 
 Query results are stored as:
 - _screenshots/customer_landing_trusted.png
-- _screenshots/customer_landing_trusted_count.png
+- _screenshots/customer_landing_trusted_count.png  
 --> _482 rows_
     
 
@@ -101,7 +101,7 @@ _This table contains only Accelerometer Readings from customers who agreed to sh
 
 Query results are stored as:
 - _screenshots/accelerometer_trusted.png
-- _screenshots/accelerometer_trusted_count.png
+- _screenshots/accelerometer_trusted_count.png  
 --> _40981 rows_
 
 ### Step_Trainer_Trusted
@@ -110,7 +110,7 @@ _This table holds Step Trainer Records data for customers who have accelerometer
 
 Query results are stored as:
 - _screenshots/step_trusted.png
-- _screenshots/step_trusted_count.png
+- _screenshots/step_trusted_count.png 
 --> _14460 rows_
 
 
@@ -127,7 +127,7 @@ The script of the glue job is stored in:
 
 Query results are stored as:
 - _screenshots/customer_curated.png
-- _screenshots/customer_curated_count.png  
+- _screenshots/customer_curated_count.png   
 --> _482 rows_
 
 ### Machine_Learning_Curated

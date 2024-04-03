@@ -2,8 +2,6 @@
 Udacity Nanodegree Data Engineering with AWS Project 3
 
 
-
-
 ## 0. Overview
 
 This represents project 3 of the Udacity Nanodegree _Data Engineering with AWS Project 3_. The background of the project as per the assignment description is outlined below:
@@ -73,12 +71,12 @@ and queries which count the number of observations in the tables:
 
 ## 4. Trusted Zone
 
-The AWS Glue scripts which depict the jobs which created the output are stored here /02_trusted. The output tables and their schema were via the Glue job (option _Create a table in the Data Catalog and, on subsequent runs, update the schema and add new partitions_) using no compression.
+The AWS Glue scripts which depict the jobs which created the output are stored here /02_trusted as *.py. The output tables and their schema were created via the Glue job (option _Create a table in the Data Catalog and, on subsequent runs, update the schema and add new partitions_) using no compression. In addition to the glue jobs the _SQL queries which are used to select and filter data_ and constitute the core of the glue job  are stored in /02_trusted as *.sql.
 
 
 ### Customer_Trusted
-This table contains only the customers who agreed to share their data for research purposes. The script of the glue job is stored in:
-- 02_trusted/customer_landing_to_trusted.py
+_This table contains only the customers who agreed to share their data for research purposes._ The script of the glue job is stored in:
+- 02_trusted/customer_landing_to_trusted.py  
 
 Query results are stored as:
 - _screenshots/customer_landing_trusted.png
@@ -93,9 +91,35 @@ Query results are stored as:
 - _screenshots/accelerometer_trusted.png
 - _screenshots/accelerometer_trusted_count.png
 
+### Step_Trainer_Trusted
+This table holds Step Trainer Records data for customers who have accelerometer data and have agreed to share their data for research. _Note_ that to construct this table an input table from the curated zone _customers_curated_ is necessary. The script of the glue job is stored in:
+- 02_trusted/step_trainer_landing_to_trusted.py
+
+Query results are stored as:
+- _screenshots/step_trusted.png
+- _screenshots/step_trusted_count.png
 
 
 ## 5. Curated Zone
-- tables
-- customer
-- machine learning
+
+The AWS Glue scripts which depict the jobs which created the output are stored here /02_trusted as *.py. The output tables and their schema were created via the Glue job (option _Create a table in the Data Catalog and, on subsequent runs, update the schema and add new partitions_) using no compression. In addition to the glue jobs the _SQL queries which are used to select and filter data_ and constitute the core of the glue job  are stored in /03_curated as *.sql.
+
+
+### Customer_Curated
+_This table includes customers who have accelerometer data and have agreed to share their data for research._
+
+The script of the glue job is stored in:
+- 02_trusted/step_trainer_landing_to_trusted.py
+
+Query results are stored as:
+- _screenshots/customer_curated.png
+- _screenshots/customer_curated_count.png
+
+### Machine_Learning_Curated
+_An aggregated table that has each of the Step Trainer Readings, and the associated accelerometer reading data for the same timestamp, but only for customers who have agreed to share their data._
+The script of the glue job is stored in:
+- 02_trusted/machine_learning_curated.py
+
+Query results are stored as:
+- _screenshots/machine_learning_curated.png
+- _screenshots/machine_learning_curated_count.png

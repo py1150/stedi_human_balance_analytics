@@ -1,480 +1,101 @@
 # stedi_human_balance_analytics
 Udacity Nanodegree Data Engineering with AWS Project 3
 
-## Setup / Target
-
-- Landing
-    - glue jobs
-- Trusted
-    - glue jobs
-- Curated
-
-
-- for glue jobs (names see rubric)
-    - see https://learn.udacity.com/nanodegrees/nd027/parts/cd12441/lessons/5dcc7706-1ab5-4361-9b6b-59d8531a41b8/concepts/1973f145-8bae-40d7-93e3-f245730c96a5
-        - Glue / ETL jobs / Visual ETL
-
-    - https://learn.udacity.com/nanodegrees/nd027/parts/cd12441/lessons/5dcc7706-1ab5-4361-9b6b-59d8531a41b8/concepts/8443a918-363a-4048-83e9-476d33ac6c95
-
-    - output of gluejobs can be stored as code ....py
-- Note: best to use queries for the job nodes
-
-- directory structured: s3://name/table/landing...
 
 
 
-_ingest data and select only approved_
+## 0. Overview
 
+This represents project 3 of the Udacity Nanodegree _Data Engineering with AWS Project 3_. The background of the project as per the assignment description is outlined below:
 
-![below](/Cyber/Courses/Udacity_DataEng/_pic/stedi_workflow.png "Project workflow")
+_The STEDI Team has been hard at work developing a hardware STEDI Step Trainer that:
 
-- Landing
-    - S3 buckets
-        output:
-        - customer_landing
-        - accelerometer_landing
-        - step_trainer_landing
+- trains the user to do a STEDI balance exercise;
+- and has sensors on the device that collect data to train a machine-learning algorithm to detect steps;
+- has a companion mobile app that collects customer data and interacts with the device sensors.
+STEDI has heard from millions of early adopters who are willing to purchase the STEDI Step Trainers and use them.
 
-    - define tables
-        - glue console
-            --> data catalog
-            - add table - add path
-            - add format
-            - add columns and data types
-                (in exercise we used BigInt for share with flag and dates)
-            - --> now table is in glue catalog --> search with AThena is possible
-            - --> **we can query the data before loading them**
-    - ingest data (landing zone)
-        - to obtain data - in aws shell clone git rep - go to /starter
-        
-        - create s3 buckets
-        - copy data: ```aws s3 cp source s3://target-bucket/```
-        - list them ```aws s3 ls s3://...```
-        - --> create a glue table from the ingested data
-            --> query
-        - --> alternatively we can also create the table (manually) directly in Athena to query
-         --> we get **create table queries** in the preview which we can save
-- process data (trusted zone)
-        - two steps
-            - join and 
-            - filter
-        - see videos
-- finalize data (curated zone)
-    - join multiple data sources / apply transformations (short note in video 12)
+Several customers have already received their Step Trainers, installed the mobile application, and begun using them together to test their balance. The Step Trainer is just a motion sensor that records the distance of the object detected. The app uses a mobile phone accelerometer to detect motion in the X, Y, and Z directions.
 
-    - join cusotmer_trusted and 
-        - accelerometer_trusteted by _email_
-        - output should only have columns from the customer table
+The STEDI team wants to use the motion sensor data to train a machine learning model to detect steps accurately in real-time. Privacy will be a primary consideration in deciding what data can be used.
 
-- Security
-    - we need an Endpoint that will allow Glue to reach out to S3
-    - 1. **Network Access**: VPC
-    - 2. **User Privileges** (for Glue to perform tasks on data within network): IAM ROle ```aws iam create-role --role-name my-glue-service-role --assume -role-policy-document .....```
-        - add privileges to role ```aws iam --role-name my-glue service-role --policy-name S3 Access --policy-document...```
-            --> wrong syntax
-        - ```aws iam put-role-policy --role-name my-glue-service-role --policy-name S3Access --policy-document```
-        - ```aws iam put-role-policy --role-name my-glue-service-role --policy-name GlueAccess --policy-document```
-
-## Data
-
-### 1. Customer Records
-
-s3://cd0030bucket/customers/
-
-serialnumber
-sharewithpublicasofdate
-birthday
-registrationdate
-sharewithresearchasofdate
-customername
-email
-lastupdatedate
-phone
-sharewithfriendsasofdate
-
-### 2. Step Trainer Records
-
-This is the data from the motion sensor.
-
-s3://cd0030bucket/step_trainer/
-
-sensorReadingTime
-serialNumber
-distanceFromObject
-
-
-### 3. Accelerometer Records
-
-This is the data from the mobile app.
-
-timeStamp
-user
-x
-y
-z
+Some of the early adopters have agreed to share their data for research purposes. Only these customers’ Step Trainer and accelerometer data should be used in the training data for the machine learning model._
 
 
 
-## 1. Workflow
+## 0.1. Worfklow
 
-- 1. Security Setup
+The worklow of the project contains the following steps:
+- 1. Create AWS Ressources
 - 2. Landing Zone
 - 3. Trusted Zone
 - 4. Curated Zone
+- 5. Delete AWS Ressources
 
-## 2. Setup AWS Ressources
+An high-level overview of these steps was created with _drawio_ and is stored as: 
+- project_overview.png
 
-### 2.1. Network Access
-- VPC
+## 0.2. Source Data
 
-- get RouteTableId
-```aws ec2 describe-route-tables | grep "RouteTableId"```
---> _rtb-08d8bcb788bb33983_ (stayed constant)
+The source data are located here:
 
-- get vpc id
-```aws ec2 describe-vpcs | grep "VpcId"```
---> _vpc-022630960c2b48beb_ (stayed constant)
-
-- S3 Gateway  
-```BASH
-aws ec2 create-vpc-endpoint --vpc-id _______ --service-name com.amazonaws.us-east-1.s3 --route-table-ids _______
-
-aws ec2 create-vpc-endpoint --vpc-id vpc-022630960c2b48beb --service-name com.amazonaws.us-east-1.s3 --route-table-ids rtb-08d8bcb788bb33983
-```
-
--->
-```BASH
-{
-    "VpcEndpoint": {
-        "VpcEndpointId": "vpce-078bfbeeb084a365a",
-        "VpcEndpointType": "Gateway",
-        "VpcId": "vpc-022630960c2b48beb",
-        "ServiceName": "com.amazonaws.us-east-1.s3",
-        "State": "available",
-        "PolicyDocument": "{\"Version\":\"2008-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":\"*\",\"Action\":\"*\",\"Resource\":\"*\"}]}",
-        "RouteTableIds": [
-            "rtb-08d8bcb788bb33983"
-        ],
-        "SubnetIds": [],
-        "Groups": [],
-        "PrivateDnsEnabled": false,
-        "RequesterManaged": false,
-        "NetworkInterfaceIds": [],
-        "DnsEntries": [],
-        "CreationTimestamp": "2024-03-30T14:03:32+00:00",
-        "OwnerId": "137423019814"
-    }
-}
-```
---> endpoint id changes
-- 2024/04/01: _vpce-0e38377f58f2d63ad_
-
---> we see it in AWS console in VPC / Endpoints
-https://us-east-1.console.aws.amazon.com/vpcconsole/home?region=us-east-1#Endpoints:
-
-### 2.2. User Privileges
-- IAM Role with policies
-
-- create glue service role
-```BASH
-aws iam create-role --role-name my-glue-service-role --assume-role-policy-document '{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Principal": {
-                "Service": "glue.amazonaws.com"
-            },
-            "Action": "sts:AssumeRole"
-        }
-    ]
-}'
-```
---> we see it in IAM / Roles / my-glue-service-role
-
-- attach policy 
-
-    - s3 access
-**Replace the blanks in the statement below with your S3 bucket name (ex: seans-lakehouse)**
-
-    ```BASH
-    aws iam put-role-policy --role-name my-glue-service-role --policy-name S3Access --policy-document '{ "Version": "2012-10-17", "Statement": [ { "Sid": "ListObjectsInBucket", "Effect": "Allow", "Action": [ "s3:ListBucket" ], "Resource": [ "arn:aws:s3:::_______" ] }, { "Sid": "AllObjectActions", "Effect": "Allow", "Action": "s3:*Object", "Resource": [ "arn:aws:s3:::_______/*" ] } ] }'
-
-
-    aws iam put-role-policy --role-name my-glue-service-role --policy-name S3Access --policy-document '{ "Version": "2012-10-17", "Statement": [ { "Sid": "ListObjectsInBucket", "Effect": "Allow", "Action": [ "s3:ListBucket" ], "Resource": [ "arn:aws:s3:::p3-stedi-lakehouse/" ] }, { "Sid": "AllObjectActions", "Effect": "Allow", "Action": "s3:*Object", "Resource": [ "arn:aws:s3:::p3-stedi-lakehouse/*" ] } ] }'
-    ```
-
-
-    - glue access
-    ```BASH
-    aws iam put-role-policy --role-name my-glue-service-role --policy-name GlueAccess --policy-document '{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": [
-                "glue:*",
-                "s3:GetBucketLocation",
-                "s3:ListBucket",
-                "s3:ListAllMyBuckets",
-                "s3:GetBucketAcl",
-                "ec2:DescribeVpcEndpoints",
-                "ec2:DescribeRouteTables",
-                "ec2:CreateNetworkInterface",
-                "ec2:DeleteNetworkInterface",
-                "ec2:DescribeNetworkInterfaces",
-                "ec2:DescribeSecurityGroups",
-                "ec2:DescribeSubnets",
-                "ec2:DescribeVpcAttribute",
-                "iam:ListRolePolicies",
-                "iam:GetRole",
-                "iam:GetRolePolicy",
-                "cloudwatch:PutMetricData"
-            ],
-            "Resource": [
-                "*"
-            ]
-        },
-        {
-            "Effect": "Allow",
-            "Action": [
-                "s3:CreateBucket",
-                "s3:PutBucketPublicAccessBlock"
-            ],
-            "Resource": [
-                "arn:aws:s3:::aws-glue-*"
-            ]
-        },
-        {
-            "Effect": "Allow",
-            "Action": [
-                "s3:GetObject",
-                "s3:PutObject",
-                "s3:DeleteObject"
-            ],
-            "Resource": [
-                "arn:aws:s3:::aws-glue-*/*",
-                "arn:aws:s3:::*/*aws-glue-*/*"
-            ]
-        },
-        {
-            "Effect": "Allow",
-            "Action": [
-                "s3:GetObject"
-            ],
-            "Resource": [
-                "arn:aws:s3:::crawler-public*",
-                "arn:aws:s3:::aws-glue-*"
-            ]
-        },
-        {
-            "Effect": "Allow",
-            "Action": [
-                "logs:CreateLogGroup",
-                "logs:CreateLogStream",
-                "logs:PutLogEvents",
-                "logs:AssociateKmsKey"
-            ],
-            "Resource": [
-                "arn:aws:logs:*:*:/aws-glue/*"
-            ]
-        },
-        {
-            "Effect": "Allow",
-            "Action": [
-                "ec2:CreateTags",
-                "ec2:DeleteTags"
-            ],
-            "Condition": {
-                "ForAllValues:StringEquals": {
-                    "aws:TagKeys": [
-                        "aws-glue-service-resource"
-                    ]
-                }
-            },
-            "Resource": [
-                "arn:aws:ec2:*:*:network-interface/*",
-                "arn:aws:ec2:*:*:security-group/*",
-                "arn:aws:ec2:*:*:instance/*"
-            ]
-        }
-    ]
-}'
-    ```
-
-### 2.5. Create S3 buckets
-```BASH
-aws s3 mb s3://p3-stedi-lakehouse/customer/landing/
-aws s3 mb s3://p3-stedi-lakehouse/customer/trusted/
-aws s3 mb s3://p3-stedi-lakehouse/customer/curated/
-
-aws s3 mb s3://p3-stedi-lakehouse/step_trainer/landing/
-aws s3 mb s3://p3-stedi-lakehouse/step_trainer/trusted/
-aws s3 mb s3://p3-stedi-lakehouse/step_trainer/curated/
-
-aws s3 mb s3://p3-stedi-lakehouse/accelerometer/landing/
-aws s3 mb s3://p3-stedi-lakehouse/accelerometer/trusted/
-aws s3 mb s3://p3-stedi-lakehouse/accelerometer/curated/
-```
-
-
-### 2.4. After usage: delete the ressources
-
-- delete the vpc endpoint
-```aws ec2 delete-vpc-endpoints --vpc-endpoint-ids vpce-02d9b861ebbd040a3```
-
-(check in AWS console)
-
-
-- delete an IAM role
-
-```BASH
-detach-role-policy --role-name <value> --policy-arn <value>
-delete-role --role-name <value>
-```
-
-```PYTHON
-iam.detach_role_policy(RoleName=DWH_IAM_ROLE_NAME, PolicyArn="arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess")
-iam.delete_role(RoleName=DWH_IAM_ROLE_NAME)
-```
-
-- delete the buckets
-```BASH
-aws s3 rb s3://p3-stedi-lakehouse/customer/landing/ --force
-aws s3 rb s3://p3-stedi-lakehouse/customer/trusted/ --force
-aws s3 rb s3://p3-stedi-lakehouse/curated/curated/ --force
-
-aws s3 rb s3://p3-stedi-lakehouse/step_trainer/landing/ --force
-aws s3 rb s3://p3-stedi-lakehouse/step_trainer/trusted/ --force
-aws s3 rb s3://p3-stedi-lakehouse/step_trainer/curated/ --force
-
-aws s3 rb s3://p3-stedi-lakehouse/accelerometer/landing/ --force
-aws s3 rb s3://p3-stedi-lakehouse/accelerometer/trusted/ --force
-aws s3 rb s3://p3-stedi-lakehouse/accelerometer/curated/ --force
-```
-
-
-## 3. Landing Zone
-- Sources
 s3://cd0030bucket/customers/
 s3://cd0030bucket/step_trainer/
 s3://cd0030bucket/accelerometer/
 
+## 0.3. S3 Buckets
 
-- ingest data
-    see:
-    https://learn.udacity.com/nanodegrees/nd027/parts/cd12441/lessons/5dcc7706-1ab5-4361-9b6b-59d8531a41b8/concepts/8443a918-363a-4048-83e9-476d33ac6c95
+I set up the following _AWS S3 bucket_ as a target for the data output:
+s3://p3-stedi-lakehouse/
 
-    https://learn.udacity.com/nanodegrees/nd027/parts/cd12441/lessons/b197ec56-711e-40f4-8ce5-57bab539b408/concepts/4e1be55b-65b9-442f-9530-d036514873f2
+Subdirectories indicate the data source and lakehouse zone, e.g.,
+s3://p3-stedi-lakehouse/customer/landing/
+All output and intermediate data were stored in the respective subdirectory. The data which comprise the final table (_machine_learning_curated_) are stored in:
+s3://p3-stedi-lakehouse/machine_learning/curated/
 
+## 3. Landing Zone
+I used the _AWS Glue data catalog_ to define the landing tables. The table schema can be found in /DDL:
+- customer_landing.sql
+- accelerometer_landing.sql
+- step_trainer_landing.sql
 
-    - clone git repo
-    ```git clone https://github.com/udacity/nd027-Data-Engineering-Data-Lakes-AWS-Exercises.git```
+In addition, their columns and datatypes are stored as .json files with the respective table name in:
+- 01_landing/
 
-        
-    ```cd nd027-Data-Engineering-Data-Lakes-AWS-Exercises/project/starter```
-
-    - upload to landing zone
-    ```BASH
-    aws s3 cp ./project/starter/customer/landing/customer-1691348231425.json s3://_______/customer/landing/
-
-    cd customer/landing
-    aws s3 cp ./customer-1691348231425.json s3://p3-stedi-lakehouse/customer/landing/
-    cd ..
-
-    cd step_trainer    
-    aws s3 cp ./landing s3://p3-stedi-lakehouse/step_trainer/landing/ --recursive
-    cd ..
-
-    cd accelerometer
-    aws s3 cp ./landing s3://p3-stedi-lakehouse/accelerometer/landing/ --recursive
-    cd ..
-    ```
-
-    - delete source git clone
-    ```BASH
-    rm -r nd027-Data-Engineering-Data-Lakes-AWS-Exercises
-    ```
-
-
-
-- create table
-    - aws glue / data catalog / databases
-        - data 
-    - --> in console search "glue data catalog"
-    - add **database**
-        - create database "_stedi_"
-    - click on database stedi and add table: customer_landing
-        - add columns
-        - --> edit schema as JSON --> see _customer_landing.json_
-
-    - --> alternatively we can create a table with athena
-        --> advantage: we can save the create query
-        <red> **note that we can create the DDL after a table was created (with glue) in Athena**</red>
-
-- target tables
-    - customer_landing
-        - source: s3://p3-stedi-lakehouse/customer/landing/
-    - accelerometer_landing
-        - source: s3://p3-stedi-lakehouse/accelerometer/landing/
-    - step_trainer_landing
-        - source: s3://p3-stedi-lakehouse/step_trainer/landing/
-
-
-- to remove
-    - remove all tables (Athena or glue)
-    - remove database (glue)
-
-- query table
-    - --> **Athena**
-
-
+The created tables are queried with _AWS Athena_. The result is stored in /Screenshots. For each of the sources: 
+- customer
+- accelerometer
+- step_trainer
+I stored the output of a sample query:
+- table_name.png
+and queries which count the number of observations in the tables:
+- table_name_count.png
 
 ## 4. Trusted Zone
 
-https://learn.udacity.com/nanodegrees/nd027/parts/cd12441/lessons/b197ec56-711e-40f4-8ce5-57bab539b408/concepts/37b447a5-9973-4613-bdff-a7311b07ec55
-
-- glue jobs
-    --> we can have multiple jobs, we can duplicate
-    - pattern bucket : transform : bucket
-    - at a drop fields or drup duplicates transform if needed
+The AWS Glue scripts which depict the jobs which created the output are stored here /02_trusted. The output tables and their schema were via the Glue job (option _Create a table in the Data Catalog and, on subsequent runs, update the schema and add new partitions_) using no compression.
 
 
-- intermediate notes
-    queries prepared in /trusted
+### Customer_Trusted
+This table contains only the customers who agreed to share their data for research purposes. The script of the glue job is stored in:
+- 02_trusted/customer_landing_to_trusted.py
 
-    _Note_ for step_trainer_trusted we first need customer_curated (step 3) --> see project rubric
+Query results are stored as:
+- _screenshots/customer_landing_trusted.png
+- _screenshots/customer_landing_trusted_count.png
+    
+
+### Accelerometer_Trusted
+This table contains only Accelerometer Readings from customers who agreed to share their data for research purposes. The script of the glue job is stored in:
+- 02_trusted/accelerometer_landing_to_trusted.py
+
+Query results are stored as:
+- _screenshots/accelerometer_trusted.png
+- _screenshots/accelerometer_trusted_count.png
 
 
-    - preconditions and options:
-        - we need to have the right permissions (e.g., S3 object operations for all objects in a path, i.e., s3://.../*)
-        - when source can be accessed - we see it in preivew
-        - e.g., for SQL Node:
-    /*
-    Input sources: customer_landing
-    SQL aliases customer_landing
-    */
-        - set output options as outlined in rubric
-        - we can work with glue cataloge tables as source (once we defined them in glue/athena)
-        - we can output to s3 (but have to set the option above to automatically generate a table in the data catagloue)
-
-    - deleted vpc endpoint only
-
-- tables
-    - customer_trusted
-            - we create a table in glue catalog (databases/tables) first (before running etl)
-            - we run the etl job customer_landing_to_trusted
-    - accelerometer trusted
-        - we test the join in athena first    
-        - update 2024/01/02 
-        - input
-            - we choose s3 as input for the processed table (customer_trusted) - format json
-            - (apparently we can also use data catalog - simply takes time to propagate updates)
-        - output
-            - we create the table schema directly via the glue job 
-            - we have to set **compression** to "None"!            
 
 ## 5. Curated Zone
 - tables
 - customer
-- machine learing
+- machine learning
